@@ -94,17 +94,24 @@ struct TranscriptHistorySection: View {
     }
 
     var body: some View {
-        VStack(spacing: 14) {
+        Group {
             if model.transcriptRecords.isEmpty {
-                GlassPanel {
+                Section {
                     emptyState
                 }
             } else {
-                historyContent
+                Section {
+                    historyContent
+                }
             }
 
             TranscriptAgentAccessSection()
-            deleteAllRow
+
+            if !model.transcriptRecords.isEmpty {
+                Section {
+                    deleteAllRow
+                }
+            }
         }
         .onAppear {
             model.refreshTranscriptRecords()
@@ -120,24 +127,43 @@ struct TranscriptHistorySection: View {
         .onChange(of: dayGroups.map(\.id)) { _ in
             normalizeExpandedDays()
         }
-        .alert(item: $deletionRequest, content: deletionAlert)
+        .alert(
+            Text(deletionAlertTitle),
+            isPresented: Binding(
+                get: { deletionRequest != nil },
+                set: { isPresented in
+                    if !isPresented { deletionRequest = nil }
+                }
+            ),
+            presenting: deletionRequest
+        ) { request in
+            Button(localization.text("common.action.delete"), role: .destructive) {
+                performDeletion(request)
+            }
+            Button(localization.text("common.action.cancel"), role: .cancel) {}
+        } message: { request in
+            Text(deletionAlertMessage(for: request))
+        }
     }
 
     private var emptyState: some View {
-        VStack(spacing: 8) {
+        HStack(alignment: .top, spacing: 12) {
             Image(systemName: settings.localTranscriptHistoryEnabled
                 ? "text.bubble"
                 : "text.bubble.fill")
-                .font(.system(size: 28))
+                .font(.body)
                 .foregroundStyle(.tertiary)
+                .frame(width: 20)
             Text(settings.localTranscriptHistoryEnabled
                 ? "statistics.transcripts.empty"
                 : "statistics.transcripts.disabled")
-                .font(.system(size: 13))
+                .font(.body)
                 .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
         }
-        .frame(maxWidth: .infinity, minHeight: 116)
+        .padding(.vertical, 12)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var historyContent: some View {
@@ -146,12 +172,12 @@ struct TranscriptHistorySection: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(selectedApplication?.name
                         ?? localization.text("statistics.transcripts.all_records"))
-                        .font(.system(size: 22, weight: .semibold))
+                        .font(.headline)
                         .lineLimit(1)
                     Text(localizedEntryCount(
                         selectedApplication?.count ?? model.transcriptRecords.count
                     ))
-                    .font(.system(size: 12))
+                    .font(.callout)
                     .foregroundStyle(.secondary)
                 }
 
@@ -164,7 +190,7 @@ struct TranscriptHistorySection: View {
                             name: selectedApplication.name
                         )
                     }
-                    .font(.system(size: 12, weight: .medium))
+                    .font(.callout.weight(.medium))
                     .buttonStyle(.borderless)
                     .fixedSize()
                 }
@@ -182,7 +208,7 @@ struct TranscriptHistorySection: View {
                             ? "chevron.up"
                             : "chevron.down")
                     }
-                    .font(.system(size: 12, weight: .medium))
+                    .font(.callout.weight(.medium))
                 }
                 .buttonStyle(.plain)
                 .foregroundStyle(Color.accentColor)
@@ -202,7 +228,7 @@ struct TranscriptHistorySection: View {
 
     @ViewBuilder
     private var applicationSwitcher: some View {
-        GlassPanel {
+        GroupBox {
             if isApplicationSwitcherExpanded {
                 LazyVGrid(
                     columns: [
@@ -257,7 +283,7 @@ struct TranscriptHistorySection: View {
         } label: {
             HStack(spacing: 9) {
                 Image(systemName: "square.grid.2x2.fill")
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.headline)
                     .foregroundStyle(
                         selectedApplicationKey == nil ? Color.accentColor : Color.secondary
                     )
@@ -269,10 +295,10 @@ struct TranscriptHistorySection: View {
 
                 VStack(alignment: .leading, spacing: 3) {
                     Text("statistics.transcripts.all_applications")
-                        .font(.system(size: 13, weight: .medium))
+                        .font(.body.weight(.medium))
                         .lineLimit(1)
                     Text(localizedCount(model.transcriptRecords.count))
-                        .font(.system(size: 12))
+                        .font(.callout)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                 }
@@ -308,10 +334,10 @@ struct TranscriptHistorySection: View {
                 applicationIcon(application, size: 32)
                 VStack(alignment: .leading, spacing: 3) {
                     Text(application.name)
-                        .font(.system(size: 13, weight: .medium))
+                        .font(.body.weight(.medium))
                         .lineLimit(1)
                     Text(localizedCount(application.count))
-                        .font(.system(size: 12))
+                        .font(.callout)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                 }
@@ -348,14 +374,14 @@ struct TranscriptHistorySection: View {
             } label: {
                 HStack(spacing: 9) {
                     Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(.callout.weight(.semibold))
                         .frame(width: 14)
                     Text(dayTitle(for: group))
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(.body.weight(.semibold))
                     Text("·")
                         .foregroundStyle(.tertiary)
                     Text(localizedEntryCount(group.records.count))
-                        .font(.system(size: 12, weight: .medium))
+                        .font(.callout.weight(.medium))
                     Spacer(minLength: 12)
                 }
                 .foregroundStyle(isExpanded ? Color.accentColor : Color.secondary)
@@ -439,29 +465,20 @@ struct TranscriptHistorySection: View {
     }
 
     private var deleteAllRow: some View {
-        HStack(alignment: .center, spacing: 16) {
-            Text("statistics.transcripts.description")
-                .font(.system(size: 12))
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-            Spacer(minLength: 18)
-
-            if !model.transcriptRecords.isEmpty {
-                Button("statistics.transcripts.delete_all", role: .destructive) {
-                    deletionRequest = .all
-                }
-                .font(.system(size: 12, weight: .medium))
-                .buttonStyle(.borderless)
+        HStack {
+            Spacer()
+            Button("statistics.transcripts.delete_all", role: .destructive) {
+                deletionRequest = .all
             }
+            .font(.callout.weight(.medium))
+            .buttonStyle(.borderless)
         }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 4)
     }
 
     private func transcriptRow(_ record: TranscriptRecord) -> some View {
         HStack(alignment: .top, spacing: 12) {
             Text(timeText(record))
-                .font(.system(size: 12, design: .rounded))
+                .font(.system(.callout, design: .rounded))
                 .foregroundStyle(.secondary)
                 .monospacedDigit()
                 .frame(width: 54, alignment: .leading)
@@ -470,13 +487,13 @@ struct TranscriptHistorySection: View {
                 applicationIcon(bundleIdentifier: record.bundleIdentifier, size: 24)
                 Text(record.applicationName.nilIfBlank
                     ?? localization.text("statistics.transcripts.unknown_application"))
-                    .font(.system(size: 12, weight: .medium))
+                    .font(.callout.weight(.medium))
                     .lineLimit(1)
             }
             .frame(width: 126, alignment: .leading)
 
             Text(record.originalTranscript)
-                .font(.system(size: 13))
+                .font(.body)
                 .textSelection(.enabled)
                 .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -494,6 +511,7 @@ struct TranscriptHistorySection: View {
             }
             .buttonStyle(.borderless)
             .help(localization.text("statistics.transcripts.copy"))
+            .accessibilityLabel(Text(localization.text("statistics.transcripts.copy")))
 
             Button(role: .destructive) {
                 deletionRequest = .record(record)
@@ -502,6 +520,7 @@ struct TranscriptHistorySection: View {
             }
             .buttonStyle(.borderless)
             .help(localization.text("statistics.transcripts.delete_record"))
+            .accessibilityLabel(Text(localization.text("statistics.transcripts.delete_record")))
         }
         .padding(.vertical, 9)
     }
@@ -534,32 +553,31 @@ struct TranscriptHistorySection: View {
         }
     }
 
-    private func deletionAlert(_ request: TranscriptDeletionRequest) -> Alert {
-        let titleKey: String
-        let message: String
+    private var deletionAlertTitle: String {
+        guard let deletionRequest else { return "" }
+        switch deletionRequest {
+        case .record:
+            return localization.text("statistics.transcripts.delete_record_confirm.title")
+        case .application:
+            return localization.text("statistics.transcripts.delete_application_confirm.title")
+        case .all:
+            return localization.text("statistics.transcripts.delete_all_confirm.title")
+        }
+    }
+
+    private func deletionAlertMessage(for request: TranscriptDeletionRequest) -> String {
         switch request {
         case .record:
-            titleKey = "statistics.transcripts.delete_record_confirm.title"
-            message = localization.text("statistics.transcripts.delete_record_confirm.message")
+            return localization.text("statistics.transcripts.delete_record_confirm.message")
         case let .application(_, name):
-            titleKey = "statistics.transcripts.delete_application_confirm.title"
-            message = String(
+            return String(
                 format: localization.text("statistics.transcripts.delete_application_confirm.message"),
                 locale: localization.locale,
                 name
             )
         case .all:
-            titleKey = "statistics.transcripts.delete_all_confirm.title"
-            message = localization.text("statistics.transcripts.delete_all_confirm.message")
+            return localization.text("statistics.transcripts.delete_all_confirm.message")
         }
-        return Alert(
-            title: Text(localization.text(titleKey)),
-            message: Text(message),
-            primaryButton: .destructive(Text(localization.text("common.action.delete"))) {
-                performDeletion(request)
-            },
-            secondaryButton: .cancel(Text(localization.text("common.action.cancel")))
-        )
     }
 
     private func performDeletion(_ request: TranscriptDeletionRequest) {
