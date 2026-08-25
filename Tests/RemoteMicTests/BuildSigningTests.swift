@@ -527,6 +527,9 @@ struct BuildSigningTests {
         #expect(driverPackageSource.contains("COMPONENT_PLIST="))
         #expect(driverPackageSource.contains("--analyze"))
         #expect(driverPackageSource.contains("BundleIsRelocatable false"))
+        #expect(driverPackageSource.contains(
+            "Add :$component_index:BundleIsRelocatable bool false"
+        ))
         #expect(driverPackageSource.contains("--component-plist \"$COMPONENT_PLIST\""))
         #expect(driverPackageSource.contains("installer-productbuild"))
         #expect(driverPackageSource.contains("UNSIGNED_INSTALL_PACKAGE"))
