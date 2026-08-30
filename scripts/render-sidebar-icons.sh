@@ -45,6 +45,7 @@ for name in "${ICON_NAMES[@]}"; do
 
   ditto --norsrc --noextattr --noqtn --noacl "$ICON_TEMPLATE" "$working_icon"
   /usr/bin/install -m 0644 "$source_svg" "$working_icon/Assets/connection.svg"
+  /usr/bin/install -m 0644 "$SOURCE_DIR/background.svg" "$working_icon/Assets/background.svg"
 
   "$ICON_TOOL" "$working_icon" \
     --export-image \

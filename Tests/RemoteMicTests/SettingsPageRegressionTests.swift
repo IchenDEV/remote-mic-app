@@ -651,13 +651,13 @@ struct SettingsPageRegressionTests {
         #expect(sidebarIcon.contains("subdirectory: \"SidebarIcons\""))
         #expect(sidebarIcon.contains("Image(nsImage: renderedImage)"))
         #expect(sidebarIcon.contains(".interpolation(.high)"))
-        #expect(sidebarIcon.contains(".fill(fallbackColor.gradient)"))
-        #expect(sidebarIcon.contains(".font(.system(size: 12, weight: .semibold))"))
-        #expect(sidebarIcon.contains(".frame(width: 20, height: 20)"))
-        #expect(sidebarIcon.contains("cornerRadius: 5"))
-        #expect(sidebarIcon.contains(
-            ".shadow(color: .black.opacity(0.16), radius: 0.75, y: 0.5)"
-        ))
+        #expect(sidebarIcon.contains(".symbolRenderingMode(.hierarchical)"))
+        #expect(sidebarIcon.contains(".foregroundStyle(fallbackColor)"))
+        #expect(sidebarIcon.contains("private let iconSize: CGFloat = 18"))
+        #expect(sidebarIcon.contains(".frame(width: iconSize, height: iconSize)"))
+        #expect(sidebarIcon.contains("cornerRadius: 4.5"))
+        #expect(!sidebarIcon.contains("fallbackColor.gradient"))
+        #expect(!sidebarIcon.contains(".shadow("))
         #expect(!sidebarIcon.contains(".stroke("))
         let sidebarStart = try #require(source.range(of: "    private var sidebar: some View"))
         let visibleSectionsStart = try #require(source.range(

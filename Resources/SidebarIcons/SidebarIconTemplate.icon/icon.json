@@ -8,6 +8,10 @@
         {
           "image-name" : "connection.svg",
           "name" : "connection"
+        },
+        {
+          "image-name" : "background.svg",
+          "name" : "background"
         }
       ],
       "shadow" : {

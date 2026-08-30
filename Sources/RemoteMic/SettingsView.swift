@@ -64,8 +64,10 @@ private struct SettingsSidebarIcon: View {
     let fallbackSystemName: String
     let fallbackColor: Color
 
+    private let iconSize: CGFloat = 18
+
     private var renderedImage: NSImage? {
-        let targetSize = NSSize(width: 20, height: 20)
+        let targetSize = NSSize(width: iconSize, height: iconSize)
         let combinedImage = NSImage(size: targetSize)
         var foundRepresentation = false
         for resourceName in ["\(assetName)@2x", assetName] {
@@ -90,19 +92,18 @@ private struct SettingsSidebarIcon: View {
             Image(nsImage: renderedImage)
                 .resizable()
                 .interpolation(.high)
-                .frame(width: 20, height: 20)
+                .frame(width: iconSize, height: iconSize)
                 .accessibilityHidden(true)
         } else {
             Image(systemName: fallbackSystemName)
-                .font(.system(size: 12, weight: .semibold))
-                .symbolRenderingMode(.monochrome)
-                .foregroundStyle(.white)
-                .frame(width: 20, height: 20)
+                .font(.system(size: 11, weight: .semibold))
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(fallbackColor)
+                .frame(width: iconSize, height: iconSize)
                 .background {
-                    RoundedRectangle(cornerRadius: 5, style: .continuous)
-                        .fill(fallbackColor.gradient)
+                    RoundedRectangle(cornerRadius: 4.5, style: .continuous)
+                        .fill(Color(red: 0.11, green: 0.115, blue: 0.13))
                 }
-                .shadow(color: .black.opacity(0.16), radius: 0.75, y: 0.5)
                 .accessibilityHidden(true)
         }
     }
