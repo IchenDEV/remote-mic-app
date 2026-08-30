@@ -72,6 +72,51 @@ test -f "$APP/Contents/Resources/RC003-remote-photo.png"
 for onboarding_image in "$ROOT"/Resources/Onboarding/*.png(N); do
   test -f "$APP/Contents/Resources/Onboarding/${onboarding_image:t}"
 done
+SIDEBAR_ICON_IMAGES=("$ROOT"/Resources/SidebarIcons/Rendered/*.png(N))
+if (( ${#SIDEBAR_ICON_IMAGES[@]} != 16 )); then
+  print -u2 "expected 16 rendered sidebar icon files"
+  exit 1
+fi
+for sidebar_icon in "${SIDEBAR_ICON_IMAGES[@]}"; do
+  test -f "$APP/Contents/Resources/SidebarIcons/${sidebar_icon:t}"
+done
+/usr/bin/xcrun swift - "${SIDEBAR_ICON_IMAGES[@]}" <<'SWIFT'
+import AppKit
+import Darwin
+import Foundation
+
+func fail(_ message: String) -> Never {
+    FileHandle.standardError.write(Data((message + "\n").utf8))
+    exit(1)
+}
+
+for path in CommandLine.arguments.dropFirst() {
+    let url = URL(fileURLWithPath: path)
+    guard let representation = try? NSBitmapImageRep(data: Data(contentsOf: url)) else {
+        fail("unable to decode sidebar icon image: \(path)")
+    }
+    let expectedSize = path.contains("@2x.png") ? 40 : 20
+    guard representation.pixelsWide == expectedSize,
+          representation.pixelsHigh == expectedSize
+    else {
+        fail("sidebar icon has the wrong dimensions: \(path)")
+    }
+    guard representation.hasAlpha else {
+        fail("sidebar icon is missing an alpha channel: \(path)")
+    }
+    let cornerAlpha = representation.colorAt(x: 0, y: 0)?.alphaComponent ?? 1
+    if cornerAlpha > (1.0 / 255.0) {
+        fail("sidebar icon corner is not transparent: \(path)")
+    }
+    let centerAlpha = representation.colorAt(
+        x: representation.pixelsWide / 2,
+        y: representation.pixelsHigh / 2
+    )?.alphaComponent ?? 0
+    if centerAlpha < 0.5 {
+        fail("sidebar icon center is unexpectedly transparent: \(path)")
+    }
+}
+SWIFT
 test -f "$APP_ICON"
 ICON_CHECK_ROOT="$(mktemp -d "${TMPDIR:-/tmp}/sayall-app-icon.XXXXXX")"
 ICONSET="$ICON_CHECK_ROOT/AppIcon.iconset"
@@ -314,6 +359,9 @@ while IFS= read -r expected_file; do
 done <<< "$EXPECTED_APP_FILES"
 for onboarding_image in "$ROOT"/Resources/Onboarding/*.png(N); do
   test -f "$APP/Contents/Resources/Onboarding/${onboarding_image:t}"
+done
+for sidebar_icon in "$ROOT"/Resources/SidebarIcons/Rendered/*.png(N); do
+  test -f "$APP/Contents/Resources/SidebarIcons/${sidebar_icon:t}"
 done
 for source_localization_dir in "$ROOT"/Resources/*.lproj(N); do
   localization_name="${source_localization_dir:t}"
