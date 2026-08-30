@@ -44,35 +44,83 @@ enum SettingsSection: String, CaseIterable, Identifiable {
         case .about: return "info.circle"
         }
     }
+
+    var sidebarIconAssetName: String {
+        switch self {
+        case .connection: return "connection"
+        case .privateFeature: return "private-feature"
+        case .macros: return "macros"
+        case .mapping: return "mapping"
+        case .statistics: return "statistics"
+        case .transcripts: return "transcripts"
+        case .permissions: return "permissions"
+        case .about: return "about"
+        }
+    }
 }
 
 private struct SettingsSidebarIcon: View {
-    let systemName: String
-    let color: Color
+    let assetName: String
+    let fallbackSystemName: String
+    let fallbackColor: Color
 
-    var body: some View {
-        Image(systemName: systemName)
-            .font(.system(size: 12, weight: .semibold))
-            .symbolRenderingMode(.monochrome)
-            .foregroundStyle(.white)
-            .frame(width: 20, height: 20)
-            .background {
-                RoundedRectangle(cornerRadius: 5, style: .continuous)
-                    .fill(color.gradient)
+    private var renderedImage: NSImage? {
+        let targetSize = NSSize(width: 20, height: 20)
+        let combinedImage = NSImage(size: targetSize)
+        var foundRepresentation = false
+        for resourceName in ["\(assetName)@2x", assetName] {
+            guard let url = Bundle.main.url(
+                forResource: resourceName,
+                withExtension: "png",
+                subdirectory: "SidebarIcons"
+            ), let sourceImage = NSImage(contentsOf: url)
+            else { continue }
+            for representation in sourceImage.representations {
+                representation.size = targetSize
+                combinedImage.addRepresentation(representation)
+                foundRepresentation = true
             }
-            .shadow(color: .black.opacity(0.16), radius: 0.75, y: 0.5)
-            .accessibilityHidden(true)
+        }
+        return foundRepresentation ? combinedImage : nil
+    }
+
+    @ViewBuilder
+    var body: some View {
+        if let renderedImage {
+            Image(nsImage: renderedImage)
+                .resizable()
+                .interpolation(.high)
+                .frame(width: 20, height: 20)
+                .accessibilityHidden(true)
+        } else {
+            Image(systemName: fallbackSystemName)
+                .font(.system(size: 12, weight: .semibold))
+                .symbolRenderingMode(.monochrome)
+                .foregroundStyle(.white)
+                .frame(width: 20, height: 20)
+                .background {
+                    RoundedRectangle(cornerRadius: 5, style: .continuous)
+                        .fill(fallbackColor.gradient)
+                }
+                .shadow(color: .black.opacity(0.16), radius: 0.75, y: 0.5)
+                .accessibilityHidden(true)
+        }
     }
 }
 
 private struct SettingsSidebarRow: View {
     let title: Text
-    let systemName: String
-    let color: Color
+    let assetName: String
+    let fallbackSystemName: String
+    let fallbackColor: Color
 
     var body: some View {
         HStack(spacing: 7) {
-            SettingsSidebarIcon(systemName: systemName, color: color)
+            SettingsSidebarIcon(
+                assetName: assetName,
+                fallbackSystemName: fallbackSystemName,
+                fallbackColor: fallbackColor
+            )
             title
                 .font(.body)
                 .lineLimit(1)
@@ -570,8 +618,9 @@ struct SettingsView: View {
                 ForEach(visibleSections) { section in
                     SettingsSidebarRow(
                         title: Text(sectionTitle(section)),
-                        systemName: sectionSystemImage(section),
-                        color: sectionIconColor(section)
+                        assetName: section.sidebarIconAssetName,
+                        fallbackSystemName: sectionSystemImage(section),
+                        fallbackColor: sectionIconColor(section)
                     )
                     .tag(section)
                     .listRowInsets(sidebarRowInsets)
@@ -589,8 +638,9 @@ struct SettingsView: View {
             } label: {
                 HStack(spacing: 7) {
                     SettingsSidebarIcon(
-                        systemName: sectionSystemImage(item.section),
-                        color: sectionIconColor(item.section)
+                        assetName: item.section.sidebarIconAssetName,
+                        fallbackSystemName: sectionSystemImage(item.section),
+                        fallbackColor: sectionIconColor(item.section)
                     )
 
                     VStack(alignment: .leading, spacing: 1) {

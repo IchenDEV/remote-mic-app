@@ -630,11 +630,28 @@ struct SettingsPageRegressionTests {
         #expect(source.contains("private struct SettingsSidebarIcon"))
         #expect(source.contains("private struct SettingsSidebarRow"))
         #expect(source.contains("SettingsSidebarIcon("))
-        #expect(source.contains(".fill(color.gradient)"))
+        #expect(source.contains("sidebarIconAssetName"))
+        for assetName in [
+            "connection",
+            "private-feature",
+            "macros",
+            "mapping",
+            "statistics",
+            "transcripts",
+            "permissions",
+            "about",
+        ] {
+            #expect(source.contains("return \"\(assetName)\""))
+        }
         let sidebarIcon = try #require(
             source.components(separatedBy: "private struct SettingsSidebarIcon").last?
                 .components(separatedBy: "extension BridgeAppModel").first
         )
+        #expect(sidebarIcon.contains("Bundle.main.url("))
+        #expect(sidebarIcon.contains("subdirectory: \"SidebarIcons\""))
+        #expect(sidebarIcon.contains("Image(nsImage: renderedImage)"))
+        #expect(sidebarIcon.contains(".interpolation(.high)"))
+        #expect(sidebarIcon.contains(".fill(fallbackColor.gradient)"))
         #expect(sidebarIcon.contains(".font(.system(size: 12, weight: .semibold))"))
         #expect(sidebarIcon.contains(".frame(width: 20, height: 20)"))
         #expect(sidebarIcon.contains("cornerRadius: 5"))

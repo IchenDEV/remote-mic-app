@@ -262,6 +262,9 @@ ditto --norsrc --noextattr --noqtn --noacl \
 ditto --norsrc --noextattr --noqtn --noacl \
   "$ROOT/Resources/Onboarding" \
   "$APP_DIR/Contents/Resources/Onboarding"
+ditto --norsrc --noextattr --noqtn --noacl \
+  "$ROOT/Resources/SidebarIcons/Rendered" \
+  "$APP_DIR/Contents/Resources/SidebarIcons"
 for icon_resource in \
   AppIcon.icns \
   StatusIconTemplate.png \
